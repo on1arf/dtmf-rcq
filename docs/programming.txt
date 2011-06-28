@@ -1,0 +1,59 @@
+Extending the DTMF demo-application.
+
+
+The "dtmf-dispatcher.pl" demo-application that is part of the dtmf-rcq
+software package is a demo-application designed to show some of the
+possibilities of DTMF-driven applets on a i-com based D-STAR repeater
+gateway-server.
+
+
+It is designed in such a way to allow experimentation and can be easily
+extended by other applications.
+
+The "dispatcher" application is written is perl, one of the main scripting-
+languages used on unix. This was chosen as it can be used by most people
+who have a minimal level of programming-experience.
+
+The program is build like this:
+- The first line of code ("open (DMTFIN ...") start up the dtmf-rcq
+application in the background, and reads its input.
+
+- every line of impact is read, and split in three parts:
+command, stream-id and the rest ("part3").
+
+That "stream-id" is important as a repeater can receive multiple streams
+at the same time. It is used as a "index" for the information stored
+for one particular stream.
+
+- based on whatever "command" was issues, "part3" is then further split
+up and processed further.
+
+
+In practive, most "application" happens when a "END"-frame is received.
+People interested in adding their own applet to the dtmf-dispatcher, are
+adviced to look for the comment "Add code here" in the source-code.
+
+
+Two different approaches are used in the demo-application.
+-> the "radio quality announcement" (DTMF "111") uses an external script.
+In this case, all data needed for that internal script is collected by
+the dtmf-dispatcher and then the external script is started with that
+additional information as parameters.
+
+People who prefer to program in another language then perl can use
+this approach. 
+
+-> in the other applets, the program-code is located in dtmf-dispatcher.pl
+itself and the external scripts are used only to issue the commands
+to dplus..
+
+
+All code after "code for DTMF actions ends here" deals with the actual
+reception of the DTMF-code, key-bounce and error-handling
+
+
+Version 0.1.0
+d.d. 25/jan/2011
+
+73
+Kristoff ON1ARF

@@ -1,0 +1,123 @@
+Installation procedure for DSTAR DTMF-RCQ software package
+
+
+
+* 1/ Install the necessairy software:
+
+(the following actions need to be done as root)
+
+1a: "libpcap-devel" (header-files used to pcap-library)
+
+yum install libpcap-devel
+
+1b: the dtmf-rcq software:
+- locate the source-code on http://villazeebries.krbonne.net/hamstuff/
+
+- download the latest source-file:
+(in this case, version 0.1.0)
+-> wget http://villazeebries.krbonne.net/dstar/dtmf-rcq/dtmf-rcq-0.1.0.tar.gz
+
+- unzip and extract
+-> tar zxvf dtmf-rcq-0.1.0.tar.gz
+
+- compile and install
+-> cd dtmf-rcq-0.1.0
+-> make
+-> make install
+
+
+
+* 2/ Makeing it secure.
+
+The dtmf-rcq system has been specifically designed so it does
+NOT have to run as root to operate.
+
+As the software-package needs to be able to intercept and process
+UDP-packages send between the gateway-server and the repeater-controller,
+it does need root-priviledges for that part of its job.
+
+For that reason, the dtmf-rcq packages has been designed in a layered
+approach:
+- Everything releated to capturing and low-level processing of the
+UDP-traffic exchanged between then the repeater-controller and the
+gateway-server is located inside one application: dtmf-rcq
+This application needs root-priviledges and will -therefor- be run
+with the help of "sudo"
+
+- Processing of the received DTMF-codes is done in the perl-script
+dtmf-distributor.pl. This application should NOT be run as root.
+
+- all other scripts started by dtmf-distributor.pl should also
+NOT be run as root.
+
+
+It is very much adviced to create a seperate (non-root) user, to
+insure the security of the repeater-system.
+
+For this example, a user called "dmtf" is created:
+
+- create a user for voice-announcement:
+-> adduser dtmf
+
+- set a password:
+-> passwd dtmf
+
+- enable sudo-access to /usr/bin/dtmf-rcq for the user "dtmf"
+SUDO_EDITOR=nano sudoedit -e /etc/sudoers
+
+Go to the bottom of the file and add this line:
+dtmf ALL = (ALL) NOPASSWD: /usr/bin/dtmf-rcq
+
+
+
+- copy the demo-application
+-> cd demo
+-> cp -Rb * /home/dtmf
+-> chown -R dtmf:dtmf /home/dtmf/*
+
+
+* 4/ testing it:
+
+- log in as "dtmf" user
+
+- start dtmf-rcq manually
+sudo /usr/bin/dtmf-rcq -t 50 -i eth1 "src host 172.16.0.1 and udp port 20000"
+
+If a D-STAR transmission is received by the repeater, the following
+information should appear:
+- one "B" (BEGIN) line at the beginning of the transmission
+- a "M" (MESSAGE) line containing the text-message field of the transmitting
+station
+- a "T" (TRACKING) line every second containing intermediate radio-quality
+transmission
+- one "E"(END) line at the end of the transmission
+
+Optionally, "D" lines should show up if the transmission contains
+DMTF-codes.
+
+
+- start "dtmd-dispatcher" (only for systems using the Dplus software)
+./dtmf-dispatcher.pl
+
+Sending the DTMF-codes "111" will play-out a voice-announcement with the
+statistics of the last stream
+This can also be achieved by making a D-STAR call to "        Q".
+
+Sending the DTMF-codes "*001C" or "*0013" will link the repeater to
+reflector REF001C
+
+Sending the DTMF-codes "**" will unlink the repeater.
+
+Sending any other code will result a broadcast-message containg the
+text "Unknown DTMF" and the received DTMF-codes.
+
+
+* Read and learn:
+
+See the files "format.txt" and "programming.txt" for more info on
+how to extend the dtmf-dispatcher program with your own programs.
+
+
+Have fun!
+73
+Kristoff ON1ARF

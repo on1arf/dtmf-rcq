@@ -1,0 +1,133 @@
+Format of the messages created by the dtmf-rcq application:
+
+
+
+The dtmf-rcq application outputs text using the CSV (Comma Seperated
+Value) format. It does this for the following events 
+
+* B: BEGIN message
+Format: B;<stream-id>;<timestamp-sec>;<timestamp-usec>;<module>;<mycall>;
+<mycall-extension>;<yourcall>;<repeatercall1>;<repeatercall2>;<flags>
+
+Notes:
+- The stream-id is a 32-bit hexvalue that identifies a DV-stream.
+It is used to link all information about a DV-stream together.
+
+- the "timestamp" consists out of 2 values:
+timestamp-sec: unix timestamp: number of seconds since unix "epoch" 
+1/jan/1970 00:00:00 UTC
+timestamp-usec: microseconds
+
+- module: contains 1 for module B, 2 for module C and 3 for module A
+
+
+* E: END message:
+Format: E;<stream-id>;<timestamp-sec>;<timestamp-usec>;<frame-seqnr>;
+<number-of-silent-frames>;<number-of-biterrors>;<number-of-missing-frames>
+
+Note:
+The number-of-silent-frames, number-of-biterrors, and number-or-missing-frames
+give information about the statistics of the TOTAL stream.
+
+
+* X: EXIT message:
+Format: X;<stream-id>;<timestamp-sec>;<timestamp-usec>;<frame-seqnr>;
+<number-of-silent-frames>;<number-of-biterrors>;<number-of-missing-frames>
+
+Note:
+An "EXIT" message is generated when a new "START" frames is received from
+a particular module, without a previous "END"-frame.
+This can happen if a "END" frame of a stream is lost.
+
+
+* T: TRACK message:
+Format T;<stream-id>;<timestamp-sec>;<timestamp-usec>;<frame-seqnr>;
+<number-of-silent-frames>;<number-of-biterrors>;<number-of-missing-frames>
+
+Note:
+This is an message generated if the "tracking" option is enabled.
+In contrast to the "END" and "EXIT" messages, these lines contain
+statistics about the last TRACKING-interval, NOT about the TOTAL
+stream.
+
+
+
+* M: MESSAGE/TEXT message
+Format: M;<stream-id>;<frame-seqnr>;<MESSAGE TEXT>;
+
+Note:
+The Message-text field contains the 20-octet text-message that can be
+send in the "slow-speed data" part of a DV-frame.
+
+dtmf-rcq will create a M-message line the first time a text-message
+is received, or when a different message then before is received.
+
+According the (unofficial) specification on the usage of text-message
+information, this text-message should not change during the transmission
+of a DV-stream, so maximum one single M-message should be produced
+during a DV-stream.
+
+However, as the slow-speed data part of a DV-stream does not contain any
+error-correction or error-detection mechanism, it IS possible that the
+dtfm-rcq application receives a message different then what received
+before due to errors in the received DV-stream. Hence, it is possible
+that multiple M-lines show up for one single DV-stream.
+
+
+
+* D: DTMF messages
+Format: D;<stream-id>;<DTMF-CODE>;<frame-seqnr>;<bit-errors>;
+
+
+A DTMF message is generated in the following cases:
+1/ for the FIRST DV-frame that is received containing a DTMF-code
+- In that case, the <DTMF-CODE> field contains the value of the
+received DTMF-code: 0 to 9 or A to D
+- The <frame-seqne> field contains the sequence-number of this
+particular frame in the DV-stream
+- The <bit-errors> field contains the number of bit-errors found
+in the DV-frame containing this particular frame.
+
+2/ For the first concequative DV-frame that is received that does
+NOT contain a DMTF-CODE ANYMORE.
+In that case, the <DTMF-CODE> field contains the value "X"
+The <frame-seqnr> field will contain the sequence-number of
+the first frame NOT containing the DTMF-code anymore.
+
+
+3/ For the first concequative DV-frame that contains a DIFFERENT
+DMTF-CODE then found in preceding frames.
+In that case, two lines are created:
+- one line with the <DTMF-CODE> field containing the value "X"
+- one line with the <DTMF-CODE> field containing the new DTMF-code
+The <frame-seqnr> field will contain the same value in both
+lines.
+
+4/ For the first concequative DV-frame containing a DTMF-code, and
+has LESS ERRORS then was the case in the previous frames of the
+DV-frame.
+
+This information is provided for two reasons:
+- to be able to detect key-bounce. (the DTMF-code being pressed for
+a short periode or changing very rapidly)
+- to be able to detect errors. (the DTMF-decoding code has the tendency
+to decode the DMTF-information incorrectly if the DV-frames contains to
+many errors).
+
+
+
+* W: WARNING messages
+Format: W;<WARNING-type>;<streamid>;<timestamp-sec>;<timestamp-usec>;<module>;
+
+Note:
+Warning-type can be:
+-BMIS: Begin missing: frame of ongoing DVstream received without
+preceding configuration-frame.
+-BCRC: CRC-error in configuration frame of DV.
+
+
+Version 0.1.0
+d.d. 25 jan. 2011
+
+73
+Kristoff ON1ARF
